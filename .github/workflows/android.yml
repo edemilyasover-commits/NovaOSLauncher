@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "NovaOSLauncher_source.zip"
+      - "source/NovaOSLauncher/**"
       - ".github/workflows/android.yml"
 
 jobs:
@@ -13,13 +13,6 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
-      - name: Extract Android project
-        run: |
-          mkdir -p source
-          unzip -q NovaOSLauncher_source.zip -d source
-          test -f source/NovaOSLauncher/build.gradle
-          test -f source/NovaOSLauncher/app/build.gradle
 
       - name: Set up Java
         uses: actions/setup-java@v4
