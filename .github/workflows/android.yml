@@ -1,0 +1,53 @@
+name: Build NovaOS Launcher APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "NovaOSLauncher_source.zip"
+      - ".github/workflows/android.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Extract Android project
+        shell: bash
+        run: |
+          mkdir -p source
+          unzip -q NovaOSLauncher_source.zip -d source
+          echo "Archive contents:"
+          find source -maxdepth 4 -type f | sort | head -200
+          WRAPPER="$(find source -type f -name gradlew -print -quit)"
+          if [ -z "$WRAPPER" ]; then
+            echo "::error::No Gradle wrapper (gradlew) found in the source archive."
+            exit 1
+          fi
+          echo "GRADLEW=$WRAPPER" >> "$GITHUB_ENV"
+          echo "PROJECT_DIR=$(dirname "$WRAPPER")" >> "$GITHUB_ENV"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: |
+          chmod +x "${{ github.workspace }}/${{ env.GRADLEW }}"
+          "${{ github.workspace }}/${{ env.GRADLEW }}" assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: NovaOSLauncher-debug-apk
+          path: source/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
